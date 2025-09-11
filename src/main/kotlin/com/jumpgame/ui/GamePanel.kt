@@ -41,6 +41,12 @@ class GamePanel : JPanel(), ActionListener {
         
         /** Color used for UI text */
         private val TEXT_COLOR = Color.BLACK
+        
+        /** Color used to render enemies */
+        private val ENEMY_COLOR = Color.RED
+        
+        /** Color used for game over text */
+        private val GAME_OVER_COLOR = Color.RED
     }
     
     /**
@@ -131,7 +137,12 @@ class GamePanel : JPanel(), ActionListener {
         drawBackground(g2d)
         drawGround(g2d)
         drawPlayer(g2d)
+        drawEnemies(g2d)
         drawUI(g2d)
+        
+        if (gameWorld.isGameOver) {
+            drawGameOver(g2d)
+        }
     }
     
     /**
@@ -191,6 +202,8 @@ class GamePanel : JPanel(), ActionListener {
         g2d.drawString("Position: (${position.x.toInt()}, ${position.y.toInt()})", 10, 30)
         g2d.drawString("On Ground: ${player.isOnGround}", 10, 50)
         g2d.drawString("Jumping: ${player.isJumping}", 10, 70)
+        g2d.drawString("Alive: ${player.isAlive}", 10, 90)
+        g2d.drawString("Enemies: ${gameWorld.getEnemies().size}", 10, 110)
         
         g2d.font = Font("Arial", Font.PLAIN, 12)
         g2d.drawString("Controls: Arrow Keys/WASD to move, Space/Up/W to jump", 10, height - 20)
@@ -216,4 +229,62 @@ class GamePanel : JPanel(), ActionListener {
      * @return true if the game is running, false otherwise
      */
     fun isRunning(): Boolean = isGameRunning
+    
+    /**
+     * Draws all enemies in the game world.
+     *
+     * @param g2d The Graphics2D context to draw on
+     */
+    private fun drawEnemies(g2d: Graphics2D) {
+        val enemies = gameWorld.getEnemies()
+        g2d.color = ENEMY_COLOR
+        
+        enemies.forEach { enemy ->
+            if (enemy.isAlive) {
+                val bounds = enemy.getBounds()
+                g2d.fillRect(bounds.x, bounds.y, bounds.width, bounds.height)
+                
+                // Draw simple face
+                g2d.color = Color.WHITE
+                g2d.fillOval(bounds.x + 4, bounds.y + 6, 4, 4)
+                g2d.fillOval(bounds.x + 14, bounds.y + 6, 4, 4)
+                
+                g2d.color = Color.BLACK
+                g2d.fillOval(bounds.x + 5, bounds.y + 7, 2, 2)
+                g2d.fillOval(bounds.x + 15, bounds.y + 7, 2, 2)
+                
+                // Reset to enemy color for next enemy
+                g2d.color = ENEMY_COLOR
+            }
+        }
+    }
+    
+    /**
+     * Draws the game over screen with restart instructions.
+     *
+     * @param g2d The Graphics2D context to draw on
+     */
+    private fun drawGameOver(g2d: Graphics2D) {
+        // Semi-transparent overlay
+        g2d.color = Color(0, 0, 0, 128)
+        g2d.fillRect(0, 0, width, height)
+        
+        // Game over text
+        g2d.color = GAME_OVER_COLOR
+        g2d.font = Font("Arial", Font.BOLD, 48)
+        val gameOverText = "GAME OVER"
+        val fm = g2d.fontMetrics
+        val textX = (width - fm.stringWidth(gameOverText)) / 2
+        val textY = height / 2 - 50
+        g2d.drawString(gameOverText, textX, textY)
+        
+        // Restart instructions
+        g2d.color = Color.WHITE
+        g2d.font = Font("Arial", Font.PLAIN, 20)
+        val restartText = "Press F2 or use Game menu to restart"
+        val restartFm = g2d.fontMetrics
+        val restartX = (width - restartFm.stringWidth(restartText)) / 2
+        val restartY = textY + 60
+        g2d.drawString(restartText, restartX, restartY)
+    }
 }

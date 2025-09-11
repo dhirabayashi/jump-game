@@ -15,9 +15,8 @@ class Player(initialPosition: Vector2D) {
     /** Current position of the player in the game world */
     var position: Vector2D = initialPosition
     
-    /** Current velocity of the player, with private setter to control access */
+    /** Current velocity of the player */
     var velocity: Vector2D = Vector2D.ZERO
-        private set
     
     /** Flag indicating whether the player is currently touching the ground */
     var isOnGround: Boolean = false
@@ -25,6 +24,10 @@ class Player(initialPosition: Vector2D) {
     
     /** Flag indicating whether the player is currently in a jump state */
     var isJumping: Boolean = false
+        private set
+    
+    /** Flag indicating whether the player is alive */
+    var isAlive: Boolean = true
         private set
     
     /** Width of the player's collision box in pixels */
@@ -56,6 +59,7 @@ class Player(initialPosition: Vector2D) {
      * @param deltaTime The time elapsed since the last update in seconds
      */
     fun moveLeft(deltaTime: Double) {
+        if (!isAlive) return
         velocity = Vector2D(-MOVE_SPEED, velocity.y)
         updatePosition(deltaTime)
     }
@@ -66,6 +70,7 @@ class Player(initialPosition: Vector2D) {
      * @param deltaTime The time elapsed since the last update in seconds
      */
     fun moveRight(deltaTime: Double) {
+        if (!isAlive) return
         velocity = Vector2D(MOVE_SPEED, velocity.y)
         updatePosition(deltaTime)
     }
@@ -75,7 +80,7 @@ class Player(initialPosition: Vector2D) {
      * Only allows jumping when the player is on the ground and not already jumping.
      */
     fun jump() {
-        if (isOnGround && !isJumping) {
+        if (isAlive && isOnGround && !isJumping) {
             velocity = Vector2D(velocity.x, JUMP_SPEED)
             isOnGround = false
             isJumping = true
@@ -97,6 +102,8 @@ class Player(initialPosition: Vector2D) {
      * @param deltaTime The time elapsed since the last update in seconds
      */
     fun update(deltaTime: Double) {
+        if (!isAlive) return
+        
         applyGravity(deltaTime)
         updatePosition(deltaTime)
         checkGroundCollision()
@@ -164,6 +171,16 @@ class Player(initialPosition: Vector2D) {
         velocity = Vector2D.ZERO
         isOnGround = false
         isJumping = false
+        isAlive = true
+    }
+    
+    /**
+     * Kills the player, stopping all movement and preventing further actions.
+     * Called when the player collides with an enemy or falls into a hazard.
+     */
+    fun die() {
+        isAlive = false
+        velocity = Vector2D.ZERO
     }
 }
 

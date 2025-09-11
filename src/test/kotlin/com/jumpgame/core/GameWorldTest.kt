@@ -25,6 +25,22 @@ class GameWorldTest {
     }
     
     @Test
+    fun `game world initializes with enemies`() {
+        val gameWorld = createGameWorld()
+        val enemies = gameWorld.getEnemies()
+        
+        assertEquals(1, enemies.size)
+        assertTrue(enemies[0].isAlive)
+    }
+    
+    @Test
+    fun `game world initializes without game over`() {
+        val gameWorld = createGameWorld()
+        
+        assertFalse(gameWorld.isGameOver)
+    }
+    
+    @Test
     fun `handleInput processes left movement`() {
         val gameWorld = createGameWorld()
         val input = GameInput(isLeftPressed = true)
@@ -187,5 +203,114 @@ class GameWorldTest {
         
         assertEquals(input1, input2)
         assertNotEquals(input1, input3)
+    }
+    
+    @Test
+    fun `update updates enemies`() {
+        val gameWorld = createGameWorld()
+        val enemies = gameWorld.getEnemies()
+        val initialPosition = enemies[0].position
+        
+        Thread.sleep(50) // Ensure time passes
+        gameWorld.update()
+        
+        val updatedEnemies = gameWorld.getEnemies()
+        assertNotEquals(initialPosition, updatedEnemies[0].position)
+    }
+    
+    @Test
+    fun `reset clears and respawns enemies`() {
+        val gameWorld = createGameWorld()
+        val enemies = gameWorld.getEnemies()
+        
+        // Defeat the enemy
+        enemies[0].defeat()
+        gameWorld.update() // This should remove defeated enemies
+        
+        gameWorld.reset()
+        
+        val newEnemies = gameWorld.getEnemies()
+        assertEquals(1, newEnemies.size)
+        assertTrue(newEnemies[0].isAlive)
+    }
+    
+    @Test
+    fun `reset clears game over state`() {
+        val gameWorld = createGameWorld()
+        
+        // Simulate game over by killing player
+        gameWorld.getPlayer().die()
+        gameWorld.update()
+        assertTrue(gameWorld.isGameOver)
+        
+        gameWorld.reset()
+        
+        assertFalse(gameWorld.isGameOver)
+        assertTrue(gameWorld.getPlayer().isAlive)
+    }
+    
+    @Test
+    fun `game over prevents input handling`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Kill player to trigger game over
+        player.die()
+        gameWorld.update()
+        assertTrue(gameWorld.isGameOver)
+        
+        val initialPosition = player.position
+        gameWorld.handleInput(GameInput(isRightPressed = true))
+        
+        assertEquals(initialPosition, player.position)
+        assertEquals(Vector2D.ZERO, player.velocity)
+    }
+    
+    @Test
+    fun `game over prevents world updates`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Kill player to trigger game over
+        player.die()
+        gameWorld.update() // First update to set game over
+        assertTrue(gameWorld.isGameOver)
+        
+        val enemies = gameWorld.getEnemies()
+        val enemyPosition = enemies[0].position
+        
+        Thread.sleep(50)
+        gameWorld.update() // Second update should do nothing
+        
+        val updatedEnemies = gameWorld.getEnemies()
+        assertEquals(enemyPosition, updatedEnemies[0].position)
+    }
+    
+    @Test
+    fun `player death from enemy collision triggers game over`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        val enemies = gameWorld.getEnemies()
+        
+        // Position player next to enemy (not stomping)
+        player.position = Vector2D(enemies[0].position.x + 10, enemies[0].position.y)
+        player.velocity = Vector2D(0.0, 0.0) // Not falling
+        
+        gameWorld.update()
+        
+        assertFalse(player.isAlive)
+        assertTrue(gameWorld.isGameOver)
+    }
+    
+    @Test
+    fun `defeated enemies are removed from world`() {
+        val gameWorld = createGameWorld()
+        val enemies = gameWorld.getEnemies()
+        
+        enemies[0].defeat()
+        gameWorld.update()
+        
+        val updatedEnemies = gameWorld.getEnemies()
+        assertEquals(0, updatedEnemies.size)
     }
 }
