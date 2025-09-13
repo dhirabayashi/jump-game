@@ -162,29 +162,40 @@ class GamePanel : JPanel(), ActionListener {
      */
     private fun drawGround(g2d: Graphics2D) {
         g2d.color = GROUND_COLOR
-        
+
         // Draw each platform as a separate rectangle
         gameWorld.platforms.forEach { platform ->
             val platformWidth = platform.endX - platform.startX
+            val platformHeight = height - platform.y
             g2d.fillRect(
-                platform.startX, 
-                gameWorld.groundLevel, 
-                platformWidth, 
-                height - gameWorld.groundLevel
+                platform.startX,
+                platform.y,
+                platformWidth,
+                platformHeight
             )
+
+            // Add a border for better visibility
+            g2d.color = Color.DARK_GRAY
+            g2d.drawRect(
+                platform.startX,
+                platform.y,
+                platformWidth,
+                platformHeight
+            )
+            g2d.color = GROUND_COLOR
         }
-        
+
         // Draw pit warning indicators
         g2d.color = Color.DARK_GRAY
         g2d.font = Font("Arial", Font.BOLD, 12)
-        
-        // Find gaps and draw warning text
-        val platforms = gameWorld.platforms.sortedBy { it.startX }
-        for (i in 0 until platforms.size - 1) {
-            val gapStart = platforms[i].endX
-            val gapEnd = platforms[i + 1].startX
+
+        // Find gaps at ground level and draw warning text
+        val groundLevelPlatforms = gameWorld.platforms.filter { it.y == gameWorld.groundLevel }.sortedBy { it.startX }
+        for (i in 0 until groundLevelPlatforms.size - 1) {
+            val gapStart = groundLevelPlatforms[i].endX
+            val gapEnd = groundLevelPlatforms[i + 1].startX
             val gapCenter = (gapStart + gapEnd) / 2
-            
+
             if (gapEnd - gapStart > 50) { // Only show warning for significant gaps
                 g2d.drawString("PIT!", gapCenter - 15, gameWorld.groundLevel - 10)
             }

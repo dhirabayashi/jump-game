@@ -38,11 +38,44 @@ class GameWorld {
     val groundLevel: Int = 400
     
     /** List of platforms (solid ground areas) defined by start and end X coordinates */
-    val platforms: List<Platform> = listOf(
-        Platform(0, 300),      // Left platform
-        Platform(400, 500),    // Middle platform  
-        Platform(600, 800)     // Right platform
-    )
+    val platforms: List<Platform> = generateGamePlatforms()
+
+    /**
+     * Generates all platforms for the game world including regular platforms and staircases.
+     *
+     * @return List of all Platform objects in the game world
+     */
+    private fun generateGamePlatforms(): List<Platform> {
+        val platformList = mutableListOf<Platform>()
+
+        // Regular platforms
+        platformList.addAll(listOf(
+            Platform(0, 200),      // Left platform (shorter to make room for stairs)
+            Platform(600, 800)     // Right platform
+        ))
+
+        // Add ascending staircase in the middle
+        val staircase = Staircase(
+            startX = 250,
+            stepCount = 5,
+            stepWidth = 60,
+            stepHeight = 25,
+            ascending = true
+        )
+        platformList.addAll(staircase.generatePlatforms(groundLevel))
+
+        // Add descending staircase
+        val descendingStaircase = Staircase(
+            startX = 500,
+            stepCount = 4,
+            stepWidth = 50,
+            stepHeight = 20,
+            ascending = false
+        )
+        platformList.addAll(descendingStaircase.generatePlatforms(groundLevel - 100))
+
+        return platformList
+    }
     
     init {
         spawnInitialEnemies()
@@ -254,28 +287,42 @@ class GameWorld {
     private fun checkPlatformCollisions() {
         val playerBounds = player.getBounds()
         val playerCenterX = playerBounds.x + playerBounds.width / 2.0
-        
+        val playerBottomY = player.position.y + player.height
+
         // Don't do platform collision if player is far below screen (they should fall and die)
         if (player.position.y > gameHeight) {
             player.isOnGround = false
             return
         }
-        
-        // Check if player is at ground level and on a platform
-        if (player.position.y + player.height >= groundLevel) {
-            if (isOnSolidGround(playerCenterX)) {
-                // Player is on a platform
-                player.position = Vector2D(player.position.x, groundLevel - player.height.toDouble())
+
+        // Find the platform the player might be standing on
+        val standingPlatform = findPlatformAt(playerCenterX, playerBottomY)
+
+        if (standingPlatform != null) {
+            // Check if player is landing on or standing on this platform
+            if (playerBottomY >= standingPlatform.y && player.position.y < standingPlatform.y) {
+                // Player is on this platform
+                player.position = Vector2D(player.position.x, standingPlatform.y - player.height.toDouble())
                 player.velocity = Vector2D(player.velocity.x, 0.0)
                 player.isOnGround = true
                 player.isJumping = false
-            } else {
-                // Player is over a pit, let them fall
-                player.isOnGround = false
             }
         } else {
-            // Player is in the air
+            // Player is not on any platform
             player.isOnGround = false
+        }
+    }
+
+    /**
+     * Finds the platform at the given position, if any.
+     *
+     * @param x The X coordinate to check
+     * @param y The Y coordinate to check (bottom of player)
+     * @return The Platform object if one is found, null otherwise
+     */
+    private fun findPlatformAt(x: Double, y: Double): Platform? {
+        return platforms.find { platform ->
+            x >= platform.startX && x <= platform.endX && y >= platform.y - 10 && y <= platform.y + 10
         }
     }
 }
@@ -301,5 +348,47 @@ data class GameInput(
  *
  * @property startX The left edge X coordinate of the platform
  * @property endX The right edge X coordinate of the platform
+ * @property y The Y coordinate of the platform (default is ground level)
  */
-data class Platform(val startX: Int, val endX: Int)
+data class Platform(val startX: Int, val endX: Int, val y: Int = 400)
+
+/**
+ * Represents a staircase terrain feature.
+ *
+ * @property startX The starting X coordinate of the staircase
+ * @property stepCount Number of steps in the staircase
+ * @property stepWidth Width of each step
+ * @property stepHeight Height difference between steps
+ * @property ascending Whether the staircase goes up (true) or down (false)
+ */
+data class Staircase(
+    val startX: Int,
+    val stepCount: Int,
+    val stepWidth: Int,
+    val stepHeight: Int,
+    val ascending: Boolean = true
+) {
+    /**
+     * Generates platform objects for each step of the staircase.
+     *
+     * @param baseY The base Y coordinate to start from
+     * @return List of Platform objects representing the staircase steps
+     */
+    fun generatePlatforms(baseY: Int): List<Platform> {
+        val platforms = mutableListOf<Platform>()
+
+        for (i in 0 until stepCount) {
+            val stepStartX = startX + (i * stepWidth)
+            val stepEndX = stepStartX + stepWidth
+            val stepY = if (ascending) {
+                baseY - (i * stepHeight)
+            } else {
+                baseY + (i * stepHeight)
+            }
+
+            platforms.add(Platform(stepStartX, stepEndX, stepY))
+        }
+
+        return platforms
+    }
+}

@@ -430,32 +430,34 @@ class GameWorldTest {
     @Test
     fun `game world has platforms defined`() {
         val gameWorld = createGameWorld()
-        
-        assertEquals(3, gameWorld.platforms.size)
-        // Check platform positions
+
+        // New layout includes 2 regular platforms + 5 ascending stairs + 4 descending stairs = 11 platforms
+        assertEquals(11, gameWorld.platforms.size)
+
+        // Check first regular platform
         assertEquals(0, gameWorld.platforms[0].startX)
-        assertEquals(300, gameWorld.platforms[0].endX)
-        assertEquals(400, gameWorld.platforms[1].startX)
-        assertEquals(500, gameWorld.platforms[1].endX)
-        assertEquals(600, gameWorld.platforms[2].startX)
-        assertEquals(800, gameWorld.platforms[2].endX)
+        assertEquals(200, gameWorld.platforms[0].endX)
+
+        // Check that we have the rightmost platform at the expected position
+        val rightmostPlatform = gameWorld.platforms.maxByOrNull { it.endX }!!
+        assertEquals(800, rightmostPlatform.endX)
     }
     
     @Test
     fun `isOnSolidGround returns true for platform positions`() {
         val gameWorld = createGameWorld()
-        
-        assertTrue(gameWorld.isOnSolidGround(150.0)) // On first platform
-        assertTrue(gameWorld.isOnSolidGround(450.0)) // On second platform
-        assertTrue(gameWorld.isOnSolidGround(700.0)) // On third platform
+
+        assertTrue(gameWorld.isOnSolidGround(100.0)) // On first platform
+        assertTrue(gameWorld.isOnSolidGround(280.0)) // On staircase
+        assertTrue(gameWorld.isOnSolidGround(700.0)) // On last platform
     }
-    
+
     @Test
     fun `isOnSolidGround returns false for pit positions`() {
         val gameWorld = createGameWorld()
-        
-        assertFalse(gameWorld.isOnSolidGround(350.0)) // In first pit
-        assertFalse(gameWorld.isOnSolidGround(550.0)) // In second pit
+
+        assertFalse(gameWorld.isOnSolidGround(225.0)) // Between first platform and stairs
+        assertFalse(gameWorld.isOnSolidGround(249.0)) // Just before stairs start (stairs start at 250)
     }
     
     @Test
