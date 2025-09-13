@@ -203,8 +203,15 @@ class GamePanel : JPanel(), ActionListener {
         g2d.drawString("On Ground: ${player.isOnGround}", 10, 50)
         g2d.drawString("Jumping: ${player.isJumping}", 10, 70)
         g2d.drawString("Alive: ${player.isAlive}", 10, 90)
-        g2d.drawString("Enemies: ${gameWorld.getEnemies().size}", 10, 110)
+        g2d.drawString("Lives: ${gameWorld.remainingLives}", 10, 110)
+        g2d.drawString("Enemies: ${gameWorld.getEnemies().size}", 10, 130)
         
+        // Draw lives in a prominent position
+        g2d.color = Color.RED
+        g2d.font = Font("Arial", Font.BOLD, 20)
+        g2d.drawString("Lives: ${gameWorld.remainingLives}", width - 120, 30)
+        
+        g2d.color = TEXT_COLOR
         g2d.font = Font("Arial", Font.PLAIN, 12)
         g2d.drawString("Controls: Arrow Keys/WASD to move, Space/Up/W to jump", 10, height - 20)
     }

@@ -21,6 +21,10 @@ class GameWorld {
     var isGameOver: Boolean = false
         private set
     
+    /** Number of remaining lives for the player */
+    var remainingLives: Int = 5
+        private set
+    
     /** Timestamp of the last update for delta time calculation */
     private var lastUpdateTime: Long = System.nanoTime()
     
@@ -62,9 +66,9 @@ class GameWorld {
         keepPlayerInBounds()
         checkCollisions()
         
-        // Set game over if player died
+        // Handle player death
         if (!player.isAlive) {
-            isGameOver = true
+            handlePlayerDeath()
         }
     }
 
@@ -130,6 +134,7 @@ class GameWorld {
         enemies.clear()
         spawnInitialEnemies()
         isGameOver = false
+        remainingLives = 5
         lastUpdateTime = System.nanoTime()
     }
 
@@ -184,8 +189,29 @@ class GameWorld {
                 } else {
                     // Player touches enemy from side/bottom - player dies
                     player.die()
-                    isGameOver = true
                 }
+            }
+        }
+    }
+    
+    /**
+     * Handles player death by decreasing lives and respawning or ending game.
+     * If lives remain, respawns the player at the starting position.
+     * If no lives remain, triggers game over.
+     */
+    private fun handlePlayerDeath() {
+        if (remainingLives > 0) {
+            remainingLives--
+            
+            if (remainingLives > 0) {
+                // Still have lives, respawn player
+                player.reset(Vector2D(100, 300))
+                // Clear enemies and respawn them to reset their positions
+                enemies.clear()
+                spawnInitialEnemies()
+            } else {
+                // No more lives, game over
+                isGameOver = true
             }
         }
     }

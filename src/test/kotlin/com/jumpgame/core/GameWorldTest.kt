@@ -41,6 +41,13 @@ class GameWorldTest {
     }
     
     @Test
+    fun `game world initializes with 5 lives`() {
+        val gameWorld = createGameWorld()
+        
+        assertEquals(5, gameWorld.remainingLives)
+    }
+    
+    @Test
     fun `handleInput processes left movement`() {
         val gameWorld = createGameWorld()
         val input = GameInput(isLeftPressed = true)
@@ -237,16 +244,20 @@ class GameWorldTest {
     @Test
     fun `reset clears game over state`() {
         val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
         
-        // Simulate game over by killing player
-        gameWorld.getPlayer().die()
-        gameWorld.update()
+        // Simulate game over by using all lives
+        repeat(5) {
+            player.die()
+            gameWorld.update()
+        }
         assertTrue(gameWorld.isGameOver)
         
         gameWorld.reset()
         
         assertFalse(gameWorld.isGameOver)
         assertTrue(gameWorld.getPlayer().isAlive)
+        assertEquals(5, gameWorld.remainingLives)
     }
     
     @Test
@@ -254,9 +265,11 @@ class GameWorldTest {
         val gameWorld = createGameWorld()
         val player = gameWorld.getPlayer()
         
-        // Kill player to trigger game over
-        player.die()
-        gameWorld.update()
+        // Use all lives to trigger game over
+        repeat(5) {
+            player.die()
+            gameWorld.update()
+        }
         assertTrue(gameWorld.isGameOver)
         
         val initialPosition = player.position
@@ -271,23 +284,25 @@ class GameWorldTest {
         val gameWorld = createGameWorld()
         val player = gameWorld.getPlayer()
         
-        // Kill player to trigger game over
-        player.die()
-        gameWorld.update() // First update to set game over
+        // Use all lives to trigger game over
+        repeat(5) {
+            player.die()
+            gameWorld.update()
+        }
         assertTrue(gameWorld.isGameOver)
         
         val enemies = gameWorld.getEnemies()
         val enemyPosition = enemies[0].position
         
         Thread.sleep(50)
-        gameWorld.update() // Second update should do nothing
+        gameWorld.update() // Update should do nothing when game over
         
         val updatedEnemies = gameWorld.getEnemies()
         assertEquals(enemyPosition, updatedEnemies[0].position)
     }
     
     @Test
-    fun `player death from enemy collision triggers game over`() {
+    fun `player death from enemy collision decreases lives`() {
         val gameWorld = createGameWorld()
         val player = gameWorld.getPlayer()
         val enemies = gameWorld.getEnemies()
@@ -298,8 +313,10 @@ class GameWorldTest {
         
         gameWorld.update()
         
-        assertFalse(player.isAlive)
-        assertTrue(gameWorld.isGameOver)
+        // Player should be alive (respawned) but with one less life
+        assertTrue(player.isAlive)
+        assertEquals(4, gameWorld.remainingLives)
+        assertFalse(gameWorld.isGameOver)
     }
     
     @Test
@@ -312,5 +329,101 @@ class GameWorldTest {
         
         val updatedEnemies = gameWorld.getEnemies()
         assertEquals(0, updatedEnemies.size)
+    }
+    
+    @Test
+    fun `player death decreases lives and respawns when lives remain`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Kill player
+        player.die()
+        gameWorld.update()
+        
+        // Should have 4 lives left and player should be alive again (respawned)
+        assertEquals(4, gameWorld.remainingLives)
+        assertTrue(player.isAlive)
+        assertFalse(gameWorld.isGameOver)
+    }
+    
+    @Test
+    fun `game over occurs when last life is lost`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Die 5 times to use up all lives
+        repeat(5) {
+            player.die()
+            gameWorld.update()
+        }
+        
+        // Should be game over now
+        assertEquals(0, gameWorld.remainingLives)
+        assertFalse(player.isAlive)
+        assertTrue(gameWorld.isGameOver)
+    }
+    
+    @Test
+    fun `reset restores 5 lives`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Use up some lives
+        repeat(3) {
+            player.die()
+            gameWorld.update()
+        }
+        assertEquals(2, gameWorld.remainingLives)
+        
+        gameWorld.reset()
+        
+        assertEquals(5, gameWorld.remainingLives)
+        assertTrue(player.isAlive)
+        assertFalse(gameWorld.isGameOver)
+    }
+    
+    @Test
+    fun `enemies reset position when player respawns`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        val initialEnemyPosition = gameWorld.getEnemies()[0].position
+        
+        // Move enemy by updating world multiple times
+        repeat(10) {
+            Thread.sleep(10)
+            gameWorld.update()
+        }
+        val movedEnemyPosition = gameWorld.getEnemies()[0].position
+        assertNotEquals(initialEnemyPosition, movedEnemyPosition)
+        
+        // Kill player to trigger respawn
+        player.die()
+        gameWorld.update()
+        
+        // Enemy should be back at initial position
+        val respawnedEnemyPosition = gameWorld.getEnemies()[0].position
+        assertEquals(initialEnemyPosition, respawnedEnemyPosition)
+    }
+    
+    @Test
+    fun `multiple deaths in quick succession handled correctly`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Kill player multiple times quickly
+        player.die()
+        gameWorld.update()
+        assertEquals(4, gameWorld.remainingLives)
+        assertTrue(player.isAlive)
+        
+        player.die()
+        gameWorld.update()
+        assertEquals(3, gameWorld.remainingLives)
+        assertTrue(player.isAlive)
+        
+        player.die()
+        gameWorld.update()
+        assertEquals(2, gameWorld.remainingLives)
+        assertTrue(player.isAlive)
     }
 }
