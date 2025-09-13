@@ -48,8 +48,7 @@ class PlayerTest {
     @Test
     fun `jump sets velocity when on ground`() {
         val player = createPlayer()
-        player.position = Vector2D(100.0, 352.0) // On ground
-        player.update(0.016) // Update to set ground state
+        player.isOnGround = true // Manually set on ground state
         
         player.jump()
         
@@ -72,8 +71,7 @@ class PlayerTest {
     @Test
     fun `jump does nothing when already jumping`() {
         val player = createPlayer()
-        player.position = Vector2D(100.0, 352.0) // On ground
-        player.update(0.016) // Update to set ground state
+        player.isOnGround = true // Manually set on ground state
         player.jump() // First jump
         val velocityAfterFirstJump = player.velocity
         
@@ -105,13 +103,12 @@ class PlayerTest {
     @Test
     fun `update does not apply gravity when on ground`() {
         val player = createPlayer()
-        player.position = Vector2D(100.0, 352.0) // On ground
-        player.update(0.016) // First update to set ground state
-        val velocityAfterGroundSet = player.velocity
+        player.isOnGround = true // Manually set on ground state
+        val initialYVelocity = player.velocity.y
         
-        player.update(0.1) // Second update
+        player.update(0.1)
         
-        assertEquals(velocityAfterGroundSet.y, player.velocity.y)
+        assertEquals(initialYVelocity, player.velocity.y)
     }
     
     @Test
@@ -127,16 +124,14 @@ class PlayerTest {
     }
     
     @Test
-    fun `ground collision sets player on ground`() {
+    fun `update applies gravity when in air`() {
         val player = createPlayer()
-        player.position = Vector2D(100.0, 360.0) // Below ground
+        player.isOnGround = false // Manually set in air
+        val initialYVelocity = player.velocity.y
         
-        player.update(0.016)
+        player.update(0.1)
         
-        assertEquals(352.0, player.position.y) // 400 - 48
-        assertEquals(0.0, player.velocity.y)
-        assertEquals(true, player.isOnGround)
-        assertEquals(false, player.isJumping)
+        assertEquals(initialYVelocity + 98.0, player.velocity.y)
     }
     
     @Test
@@ -200,8 +195,7 @@ class PlayerTest {
     @Test
     fun `dead player cannot jump`() {
         val player = createPlayer()
-        player.position = Vector2D(100.0, 352.0) // On ground
-        player.update(0.016) // Update to set ground state
+        player.isOnGround = true // Manually set on ground state
         player.die()
         
         player.jump()

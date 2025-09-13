@@ -37,6 +37,13 @@ class GameWorld {
     /** Y-coordinate of the ground level */
     val groundLevel: Int = 400
     
+    /** List of platforms (solid ground areas) defined by start and end X coordinates */
+    val platforms: List<Platform> = listOf(
+        Platform(0, 300),      // Left platform
+        Platform(400, 500),    // Middle platform  
+        Platform(600, 800)     // Right platform
+    )
+    
     init {
         spawnInitialEnemies()
     }
@@ -64,7 +71,9 @@ class GameWorld {
         updateEnemies(deltaTime)
         
         keepPlayerInBounds()
+        checkPlatformCollisions()
         checkCollisions()
+        checkPitFalls()
         
         // Handle player death
         if (!player.isAlive) {
@@ -215,6 +224,60 @@ class GameWorld {
             }
         }
     }
+    
+    /**
+     * Checks if the player has fallen into a pit (below the screen).
+     * If so, kills the player to trigger the death handling system.
+     */
+    private fun checkPitFalls() {
+        if (player.isAlive && player.position.y > gameHeight) {
+            player.die()
+        }
+    }
+    
+    /**
+     * Checks if a given X coordinate is on a platform (solid ground).
+     * 
+     * @param x The X coordinate to check
+     * @return true if the position is on solid ground, false if it's a pit
+     */
+    fun isOnSolidGround(x: Double): Boolean {
+        return platforms.any { platform ->
+            x >= platform.startX && x <= platform.endX
+        }
+    }
+    
+    /**
+     * Handles collision detection between the player and platforms.
+     * Sets the player on the ground if they land on a platform.
+     */
+    private fun checkPlatformCollisions() {
+        val playerBounds = player.getBounds()
+        val playerCenterX = playerBounds.x + playerBounds.width / 2.0
+        
+        // Don't do platform collision if player is far below screen (they should fall and die)
+        if (player.position.y > gameHeight) {
+            player.isOnGround = false
+            return
+        }
+        
+        // Check if player is at ground level and on a platform
+        if (player.position.y + player.height >= groundLevel) {
+            if (isOnSolidGround(playerCenterX)) {
+                // Player is on a platform
+                player.position = Vector2D(player.position.x, groundLevel - player.height.toDouble())
+                player.velocity = Vector2D(player.velocity.x, 0.0)
+                player.isOnGround = true
+                player.isJumping = false
+            } else {
+                // Player is over a pit, let them fall
+                player.isOnGround = false
+            }
+        } else {
+            // Player is in the air
+            player.isOnGround = false
+        }
+    }
 }
 
 /**
@@ -232,3 +295,11 @@ data class GameInput(
     val isRightPressed: Boolean = false,
     val isJumpPressed: Boolean = false
 )
+
+/**
+ * Represents a platform (solid ground area) in the game world.
+ *
+ * @property startX The left edge X coordinate of the platform
+ * @property endX The right edge X coordinate of the platform
+ */
+data class Platform(val startX: Int, val endX: Int)

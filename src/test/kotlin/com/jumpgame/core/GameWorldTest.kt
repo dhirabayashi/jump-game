@@ -426,4 +426,104 @@ class GameWorldTest {
         assertEquals(2, gameWorld.remainingLives)
         assertTrue(player.isAlive)
     }
+    
+    @Test
+    fun `game world has platforms defined`() {
+        val gameWorld = createGameWorld()
+        
+        assertEquals(3, gameWorld.platforms.size)
+        // Check platform positions
+        assertEquals(0, gameWorld.platforms[0].startX)
+        assertEquals(300, gameWorld.platforms[0].endX)
+        assertEquals(400, gameWorld.platforms[1].startX)
+        assertEquals(500, gameWorld.platforms[1].endX)
+        assertEquals(600, gameWorld.platforms[2].startX)
+        assertEquals(800, gameWorld.platforms[2].endX)
+    }
+    
+    @Test
+    fun `isOnSolidGround returns true for platform positions`() {
+        val gameWorld = createGameWorld()
+        
+        assertTrue(gameWorld.isOnSolidGround(150.0)) // On first platform
+        assertTrue(gameWorld.isOnSolidGround(450.0)) // On second platform
+        assertTrue(gameWorld.isOnSolidGround(700.0)) // On third platform
+    }
+    
+    @Test
+    fun `isOnSolidGround returns false for pit positions`() {
+        val gameWorld = createGameWorld()
+        
+        assertFalse(gameWorld.isOnSolidGround(350.0)) // In first pit
+        assertFalse(gameWorld.isOnSolidGround(550.0)) // In second pit
+    }
+    
+    @Test
+    fun `player dies when falling below screen`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Position player below screen
+        player.position = Vector2D(400.0, gameWorld.gameHeight + 10.0)
+        
+        gameWorld.update()
+        
+        // Player should have died and respawned (lost a life)
+        assertEquals(4, gameWorld.remainingLives)
+        assertTrue(player.isAlive) // Should be respawned
+        assertEquals(Vector2D(100, 300), player.position) // Back at spawn
+    }
+    
+    @Test
+    fun `player can walk on platforms`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Position player on a platform
+        player.position = Vector2D(150.0, gameWorld.groundLevel - 48.0)
+        player.velocity = Vector2D(0.0, 0.0)
+        
+        gameWorld.update()
+        
+        // Player should be on ground
+        assertTrue(player.isOnGround)
+        assertEquals(gameWorld.groundLevel - 48.0, player.position.y, 0.1)
+    }
+    
+    @Test
+    fun `player falls through pits`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Position player over a pit at ground level
+        player.position = Vector2D(350.0, gameWorld.groundLevel - 48.0)
+        player.velocity = Vector2D(0.0, 0.0)
+        
+        gameWorld.update()
+        
+        // Player should not be on ground and should start falling
+        assertFalse(player.isOnGround)
+        assertTrue(player.velocity.y > 0) // Falling due to gravity
+    }
+    
+    @Test
+    fun `player can jump between platforms`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.getPlayer()
+        
+        // Position player on first platform
+        player.position = Vector2D(250.0, gameWorld.groundLevel - 48.0)
+        player.velocity = Vector2D(0.0, 0.0)
+        gameWorld.update()
+        assertTrue(player.isOnGround)
+        
+        // Jump and move right
+        player.jump()
+        gameWorld.handleInput(GameInput(isRightPressed = true))
+        
+        // Player should be in air moving right
+        assertFalse(player.isOnGround)
+        assertTrue(player.velocity.x > 0)
+        assertTrue(player.velocity.y < 0) // Moving up from jump
+    }
 }

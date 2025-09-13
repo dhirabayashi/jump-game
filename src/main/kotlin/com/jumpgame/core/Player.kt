@@ -20,11 +20,9 @@ class Player(initialPosition: Vector2D) {
     
     /** Flag indicating whether the player is currently touching the ground */
     var isOnGround: Boolean = false
-        private set
     
     /** Flag indicating whether the player is currently in a jump state */
     var isJumping: Boolean = false
-        private set
     
     /** Flag indicating whether the player is alive */
     var isAlive: Boolean = true
@@ -106,7 +104,7 @@ class Player(initialPosition: Vector2D) {
         
         applyGravity(deltaTime)
         updatePosition(deltaTime)
-        checkGroundCollision()
+        // Ground collision is now handled by GameWorld for platform support
     }
     
     /**
