@@ -118,9 +118,9 @@ class PlayerTest {
     fun `update caps fall speed at maximum`() {
         val player = createPlayer()
         // Make player fall for a long time to reach max speed
-        for (i in 1..20) {
+        repeat (20) {
             player.update(0.1)
-            if (player.velocity.y >= 500.0) break
+            if (player.velocity.y >= 500.0) return@repeat
         }
         
         assertTrue(player.velocity.y <= 500.0, "Velocity should not exceed max fall speed")
