@@ -12,7 +12,7 @@ import com.jumpgame.util.Vector2D
 class GameWorld {
     
     /** The player character in the game world */
-    private val player: Player = Player(Vector2D(100, 300))
+    val player: Player = Player(Vector2D(0.0, 0.0)) // Temporary position, will be set in init
     
     /** List of enemies in the game world */
     private val enemies = mutableListOf<Enemy>()
@@ -76,17 +76,42 @@ class GameWorld {
 
         return platformList
     }
-    
+
+    /**
+     * Finds a safe spawn position for the player on the leftmost platform.
+     *
+     * @return A Vector2D representing a safe spawn position
+     */
+    private fun findSafeSpawnPosition(): Vector2D {
+        // Find the leftmost platform
+        val leftmostPlatform = platforms.minByOrNull { it.startX }
+
+        if (leftmostPlatform != null) {
+            // Spawn at the left edge of the leftmost platform, on top of it
+            val spawnX = leftmostPlatform.startX + 50.0 // Small offset from edge
+            val spawnY = leftmostPlatform.y - 48.0 // Player height above platform
+            return Vector2D(spawnX, spawnY)
+        }
+
+        // Fallback: spawn at a default safe position
+        return Vector2D(100.0, groundLevel - 48.0)
+    }
+
     init {
+        // Initialize player to safe spawn position
+        val spawnPos = findSafeSpawnPosition()
+        player.reset(spawnPos)
+
+        // Explicitly set player on ground at spawn
+        player.isOnGround = true
+        player.isJumping = false
+
+        // Initialize lastUpdateTime to prevent huge deltaTime on first update
+        lastUpdateTime = System.nanoTime()
+
         spawnInitialEnemies()
     }
 
-    /**
-     * Returns the player instance for external access.
-     *
-     * @return The Player object managed by this game world
-     */
-    fun getPlayer(): Player = player
 
     /**
      * Updates the game world state including player physics, enemies, and collision detection.
@@ -95,19 +120,19 @@ class GameWorld {
      */
     fun update() {
         if (isGameOver) return
-        
+
         val currentTime = System.nanoTime()
         val deltaTime = (currentTime - lastUpdateTime) / 1_000_000_000.0
         lastUpdateTime = currentTime
-        
+
         player.update(deltaTime)
         updateEnemies(deltaTime)
-        
+
         keepPlayerInBounds()
         checkPlatformCollisions()
         checkCollisions()
         checkPitFalls()
-        
+
         // Handle player death
         if (!player.isAlive) {
             handlePlayerDeath()
@@ -172,7 +197,8 @@ class GameWorld {
      * Resets the player to the starting position, clears enemies, and reinitializes the update timer.
      */
     fun reset() {
-        player.reset(Vector2D(100, 300))
+        val resetPos = findSafeSpawnPosition()
+        player.reset(resetPos)
         enemies.clear()
         spawnInitialEnemies()
         isGameOver = false
@@ -247,7 +273,8 @@ class GameWorld {
             
             if (remainingLives > 0) {
                 // Still have lives, respawn player
-                player.reset(Vector2D(100, 300))
+                val deathRespawnPos = findSafeSpawnPosition()
+                        player.reset(deathRespawnPos)
                 // Clear enemies and respawn them to reset their positions
                 enemies.clear()
                 spawnInitialEnemies()

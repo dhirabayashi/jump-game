@@ -208,7 +208,7 @@ class GamePanel : JPanel(), ActionListener {
      * @param g2d The Graphics2D context to draw on
      */
     private fun drawPlayer(g2d: Graphics2D) {
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val bounds = player.getBounds()
         
         g2d.color = PLAYER_COLOR
@@ -233,7 +233,7 @@ class GamePanel : JPanel(), ActionListener {
         g2d.color = TEXT_COLOR
         g2d.font = Font("Arial", Font.BOLD, 16)
         
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val position = player.position
         
         g2d.drawString("Position: (${position.x.toInt()}, ${position.y.toInt()})", 10, 30)

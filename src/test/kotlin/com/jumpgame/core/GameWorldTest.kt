@@ -19,9 +19,13 @@ class GameWorldTest {
     @Test
     fun `game world initializes player at correct position`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
-        assertEquals(Vector2D(100, 300), player.position)
+        // Player should be spawned on the leftmost platform
+        assertTrue(player.position.x >= 0)
+        assertTrue(player.position.y >= 0)
+        // Player should be on solid ground
+        assertTrue(gameWorld.isOnSolidGround(player.position.x))
     }
     
     @Test
@@ -54,7 +58,7 @@ class GameWorldTest {
         
         gameWorld.handleInput(input)
         
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         assertEquals(-200.0, player.velocity.x)
     }
     
@@ -65,7 +69,7 @@ class GameWorldTest {
         
         gameWorld.handleInput(input)
         
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         assertEquals(200.0, player.velocity.x)
     }
     
@@ -74,7 +78,7 @@ class GameWorldTest {
         val gameWorld = createGameWorld()
         
         // First move player to ground
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         player.position = Vector2D(100.0, 352.0)
         gameWorld.update()
         
@@ -88,7 +92,7 @@ class GameWorldTest {
     @Test
     fun `handleInput stops horizontal movement when no directional input`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // First give player some horizontal movement
         gameWorld.handleInput(GameInput(isRightPressed = true))
@@ -104,7 +108,7 @@ class GameWorldTest {
         val gameWorld = createGameWorld()
         
         // Move player to ground first
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         player.position = Vector2D(100.0, 352.0)
         gameWorld.update()
         
@@ -118,7 +122,7 @@ class GameWorldTest {
     @Test
     fun `update calls player update`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val initialPosition = player.position
         
         // Give player some velocity by moving right to see if update is called
@@ -134,7 +138,7 @@ class GameWorldTest {
     @Test
     fun `player is kept within left boundary`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Move player beyond left boundary
         player.position = Vector2D(-10.0, 300.0)
@@ -146,7 +150,7 @@ class GameWorldTest {
     @Test
     fun `player is kept within right boundary`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Move player beyond right boundary
         player.position = Vector2D(800.0, 300.0)
@@ -158,7 +162,7 @@ class GameWorldTest {
     @Test
     fun `player position is not changed when within boundaries`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val validPosition = Vector2D(400.0, 300.0)
         
         player.position = validPosition
@@ -170,14 +174,18 @@ class GameWorldTest {
     @Test
     fun `reset restores initial game state`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Change player state
         player.position = Vector2D(500.0, 100.0)
         
         gameWorld.reset()
         
-        assertEquals(Vector2D(100, 300), player.position)
+        // Player should be spawned on the leftmost platform
+        assertTrue(player.position.x >= 0)
+        assertTrue(player.position.y >= 0)
+        // Player should be on solid ground
+        assertTrue(gameWorld.isOnSolidGround(player.position.x))
     }
     
     @Test
@@ -244,7 +252,7 @@ class GameWorldTest {
     @Test
     fun `reset clears game over state`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Simulate game over by using all lives
         repeat(5) {
@@ -256,14 +264,14 @@ class GameWorldTest {
         gameWorld.reset()
         
         assertFalse(gameWorld.isGameOver)
-        assertTrue(gameWorld.getPlayer().isAlive)
+        assertTrue(gameWorld.player.isAlive)
         assertEquals(5, gameWorld.remainingLives)
     }
     
     @Test
     fun `game over prevents input handling`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Use all lives to trigger game over
         repeat(5) {
@@ -282,7 +290,7 @@ class GameWorldTest {
     @Test
     fun `game over prevents world updates`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Use all lives to trigger game over
         repeat(5) {
@@ -304,7 +312,7 @@ class GameWorldTest {
     @Test
     fun `player death from enemy collision decreases lives`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val enemies = gameWorld.getEnemies()
         
         // Position player next to enemy (not stomping)
@@ -334,7 +342,7 @@ class GameWorldTest {
     @Test
     fun `player death decreases lives and respawns when lives remain`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Kill player
         player.die()
@@ -349,7 +357,7 @@ class GameWorldTest {
     @Test
     fun `game over occurs when last life is lost`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Die 5 times to use up all lives
         repeat(5) {
@@ -366,7 +374,7 @@ class GameWorldTest {
     @Test
     fun `reset restores 5 lives`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Use up some lives
         repeat(3) {
@@ -385,7 +393,7 @@ class GameWorldTest {
     @Test
     fun `enemies reset position when player respawns`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         val initialEnemyPosition = gameWorld.getEnemies()[0].position
         
         // Move enemy by updating world multiple times
@@ -408,7 +416,7 @@ class GameWorldTest {
     @Test
     fun `multiple deaths in quick succession handled correctly`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Kill player multiple times quickly
         player.die()
@@ -463,7 +471,7 @@ class GameWorldTest {
     @Test
     fun `player dies when falling below screen`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Position player below screen
         player.position = Vector2D(400.0, gameWorld.gameHeight + 10.0)
@@ -473,13 +481,17 @@ class GameWorldTest {
         // Player should have died and respawned (lost a life)
         assertEquals(4, gameWorld.remainingLives)
         assertTrue(player.isAlive) // Should be respawned
-        assertEquals(Vector2D(100, 300), player.position) // Back at spawn
+        // Player should be spawned on the leftmost platform
+        assertTrue(player.position.x >= 0)
+        assertTrue(player.position.y >= 0)
+        // Player should be on solid ground
+        assertTrue(gameWorld.isOnSolidGround(player.position.x)) // Back at spawn
     }
     
     @Test
     fun `player can walk on platforms`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Position player on a platform
         player.position = Vector2D(150.0, gameWorld.groundLevel - 48.0)
@@ -495,11 +507,12 @@ class GameWorldTest {
     @Test
     fun `player falls through pits`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
-        // Position player over a pit at ground level
-        player.position = Vector2D(350.0, gameWorld.groundLevel - 48.0)
+        // Position player over a pit at ground level (between left platform and stairs)
+        player.position = Vector2D(225.0, gameWorld.groundLevel - 48.0)
         player.velocity = Vector2D(0.0, 0.0)
+        player.isOnGround = false  // Player is not on ground when manually positioned over a pit
         
         gameWorld.update()
         
@@ -511,7 +524,7 @@ class GameWorldTest {
     @Test
     fun `player can jump between platforms`() {
         val gameWorld = createGameWorld()
-        val player = gameWorld.getPlayer()
+        val player = gameWorld.player
         
         // Position player on first platform
         player.position = Vector2D(250.0, gameWorld.groundLevel - 48.0)
