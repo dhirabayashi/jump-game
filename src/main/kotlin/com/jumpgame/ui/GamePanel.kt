@@ -185,21 +185,6 @@ class GamePanel : JPanel(), ActionListener {
             g2d.color = GROUND_COLOR
         }
 
-        // Draw pit warning indicators
-        g2d.color = Color.DARK_GRAY
-        g2d.font = Font("Arial", Font.BOLD, 12)
-
-        // Find gaps at ground level and draw warning text
-        val groundLevelPlatforms = gameWorld.platforms.filter { it.y == gameWorld.groundLevel }.sortedBy { it.startX }
-        for (i in 0 until groundLevelPlatforms.size - 1) {
-            val gapStart = groundLevelPlatforms[i].endX
-            val gapEnd = groundLevelPlatforms[i + 1].startX
-            val gapCenter = (gapStart + gapEnd) / 2
-
-            if (gapEnd - gapStart > 50) { // Only show warning for significant gaps
-                g2d.drawString("PIT!", gapCenter - 15, gameWorld.groundLevel - 10)
-            }
-        }
     }
     
     /**
