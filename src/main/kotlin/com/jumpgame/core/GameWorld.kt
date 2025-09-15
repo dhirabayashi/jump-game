@@ -48,10 +48,10 @@ class GameWorld {
     private fun generateGamePlatforms(): List<Platform> {
         val platformList = mutableListOf<Platform>()
 
-        // Regular platforms
+        // Regular platforms (ground level - extend to bottom)
         platformList.addAll(listOf(
-            Platform(0, 200),      // Left platform (shorter to make room for stairs)
-            Platform(600, 800)     // Right platform
+            Platform(0, 200, groundLevel, gameHeight - groundLevel),      // Left platform
+            Platform(600, 800, groundLevel, gameHeight - groundLevel)     // Right platform
         ))
 
         // Add ascending staircase in the middle
@@ -346,49 +346,105 @@ class GameWorld {
     
     /**
      * Handles collision detection between the player and platforms.
-     * Sets the player on the ground if they land on a platform.
+     * Provides solid collision detection for all sides of platforms.
      */
     private fun checkPlatformCollisions() {
-        val playerBounds = player.getBounds()
-        val playerCenterX = playerBounds.x + playerBounds.width / 2.0
-        val playerBottomY = player.position.y + player.height
-
         // Don't do platform collision if player is far below screen (they should fall and die)
         if (player.position.y > gameHeight) {
             player.isOnGround = false
             return
         }
 
-        // Find the platform the player might be standing on
-        val standingPlatform = findPlatformAt(playerCenterX, playerBottomY)
+        // First check for side collisions (wall hits)
+        checkSideCollisions()
 
-        if (standingPlatform != null) {
-            // Check if player is landing on or standing on this platform
-            if (playerBottomY >= standingPlatform.y && player.position.y < standingPlatform.y) {
-                // Player is on this platform
-                player.position = Vector2D(player.position.x, standingPlatform.y - player.height.toDouble())
-                player.velocity = Vector2D(player.velocity.x, 0.0)
-                player.isOnGround = true
-                player.isJumping = false
+        // Then check for vertical collisions (top/bottom)
+        checkVerticalCollisions()
+    }
+
+    /**
+     * Checks for side collisions (left and right) with platforms.
+     */
+    private fun checkSideCollisions() {
+        val playerX = player.position.x
+        val playerY = player.position.y
+        val playerWidth = player.width.toDouble()
+        val playerHeight = player.height.toDouble()
+        val velocity = player.velocity
+
+        for (platform in platforms) {
+            // Only check side collision if player is at roughly the same height as platform
+            val platformTop = platform.y.toDouble()
+            val platformBottom = platform.bottom.toDouble()
+            val playerBottom = playerY + playerHeight
+
+            // Check if player's vertical range overlaps with platform
+            if (playerY < platformBottom && playerBottom > platformTop) {
+                val platformLeft = platform.startX.toDouble()
+                val platformRight = platform.endX.toDouble()
+
+                // Check left side collision (player moving right into platform)
+                if (velocity.x > 0 && playerX + playerWidth > platformLeft && playerX < platformLeft) {
+                    player.position = Vector2D(platformLeft - playerWidth, playerY)
+                    player.velocity = Vector2D(0.0, velocity.y)
+                    return
+                }
+
+                // Check right side collision (player moving left into platform)
+                if (velocity.x < 0 && playerX < platformRight && playerX + playerWidth > platformRight) {
+                    player.position = Vector2D(platformRight, playerY)
+                    player.velocity = Vector2D(0.0, velocity.y)
+                    return
+                }
             }
-        } else {
-            // Player is not on any platform
-            player.isOnGround = false
         }
     }
 
     /**
-     * Finds the platform at the given position, if any.
-     *
-     * @param x The X coordinate to check
-     * @param y The Y coordinate to check (bottom of player)
-     * @return The Platform object if one is found, null otherwise
+     * Checks for vertical collisions (top and bottom) with platforms.
      */
-    private fun findPlatformAt(x: Double, y: Double): Platform? {
-        return platforms.find { platform ->
-            x >= platform.startX && x <= platform.endX && y >= platform.y - 10 && y <= platform.y + 10
+    private fun checkVerticalCollisions() {
+        val playerX = player.position.x
+        val playerY = player.position.y
+        val playerWidth = player.width.toDouble()
+        val playerHeight = player.height.toDouble()
+        val playerBottomY = playerY + playerHeight
+
+        var onGround = false
+
+        for (platform in platforms) {
+            val platformLeft = platform.startX.toDouble()
+            val platformRight = platform.endX.toDouble()
+            val platformTop = platform.y.toDouble()
+            val platformBottom = platform.bottom.toDouble()
+
+            // Check if player horizontally overlaps with platform
+            if (playerX < platformRight && playerX + playerWidth > platformLeft) {
+
+                // Top collision (landing on platform)
+                if (player.velocity.y >= 0 && playerBottomY >= platformTop && playerY < platformTop) {
+                    player.position = Vector2D(playerX, platformTop - playerHeight)
+                    player.velocity = Vector2D(player.velocity.x, 0.0)
+                    player.isOnGround = true
+                    player.isJumping = false
+                    onGround = true
+                    return
+                }
+
+                // Bottom collision (hitting platform from below)
+                if (player.velocity.y < 0 && playerY <= platformBottom && playerBottomY > platformBottom) {
+                    player.position = Vector2D(playerX, platformBottom)
+                    player.velocity = Vector2D(player.velocity.x, 0.0)
+                    return
+                }
+            }
+        }
+
+        if (!onGround) {
+            player.isOnGround = false
         }
     }
+
 }
 
 /**
@@ -413,8 +469,36 @@ data class GameInput(
  * @property startX The left edge X coordinate of the platform
  * @property endX The right edge X coordinate of the platform
  * @property y The Y coordinate of the platform (default is ground level)
+ * @property thickness The thickness/height of the platform for collision detection
  */
-data class Platform(val startX: Int, val endX: Int, val y: Int = 400)
+data class Platform(val startX: Int, val endX: Int, val y: Int = 400, val thickness: Int = 20) {
+    /**
+     * Gets the bottom Y coordinate of the platform.
+     */
+    val bottom: Int get() = y + thickness
+
+    /**
+     * Checks if this platform intersects with a rectangular area.
+     */
+    fun intersects(x: Double, y: Double, width: Double, height: Double): Boolean {
+        return x < endX && x + width > startX && y < bottom && y + height > this.y
+    }
+
+    /**
+     * Gets the rectangular bounds of this platform.
+     */
+    fun getBounds(): Rectangle {
+        return Rectangle(startX, y, endX - startX, thickness)
+    }
+}
+
+/**
+ * Represents a rectangular area for collision detection.
+ */
+data class Rectangle(val x: Int, val y: Int, val width: Int, val height: Int) {
+    val right: Int get() = x + width
+    val bottom: Int get() = y + height
+}
 
 /**
  * Represents a staircase terrain feature.
@@ -450,7 +534,8 @@ data class Staircase(
                 baseY + (i * stepHeight)
             }
 
-            platforms.add(Platform(stepStartX, stepEndX, stepY))
+            // Staircase platforms have fixed thickness of 20 pixels
+            platforms.add(Platform(stepStartX, stepEndX, stepY, 20))
         }
 
         return platforms

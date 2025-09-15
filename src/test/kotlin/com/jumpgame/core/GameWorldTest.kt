@@ -508,14 +508,14 @@ class GameWorldTest {
     fun `player falls through pits`() {
         val gameWorld = createGameWorld()
         val player = gameWorld.player
-        
-        // Position player over a pit at ground level (between left platform and stairs)
-        player.position = Vector2D(225.0, gameWorld.groundLevel - 48.0)
+
+        // Position player over a pit at ground level (no platform coverage)
+        player.position = Vector2D(210.0, gameWorld.groundLevel - 48.0)  // Gap between left platform (0-200) and staircase (250+), player width=32
         player.velocity = Vector2D(0.0, 0.0)
         player.isOnGround = false  // Player is not on ground when manually positioned over a pit
-        
+
         gameWorld.update()
-        
+
         // Player should not be on ground and should start falling
         assertFalse(player.isOnGround)
         assertTrue(player.velocity.y > 0) // Falling due to gravity
