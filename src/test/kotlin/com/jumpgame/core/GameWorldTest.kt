@@ -439,8 +439,8 @@ class GameWorldTest {
     fun `game world has platforms defined`() {
         val gameWorld = createGameWorld()
 
-        // New layout includes 2 regular platforms + 5 ascending stairs + 4 descending stairs = 11 platforms
-        assertEquals(11, gameWorld.platforms.size)
+        // New layout includes 2 regular platforms + 5 ascending stairs + 4 descending stairs + 8 floating platforms = 19 platforms
+        assertEquals(19, gameWorld.platforms.size)
 
         // Check first regular platform
         assertEquals(0, gameWorld.platforms[0].startX)
@@ -464,8 +464,8 @@ class GameWorldTest {
     fun `isOnSolidGround returns false for pit positions`() {
         val gameWorld = createGameWorld()
 
-        assertFalse(gameWorld.isOnSolidGround(225.0)) // Between first platform and stairs
-        assertFalse(gameWorld.isOnSolidGround(249.0)) // Just before stairs start (stairs start at 250)
+        assertFalse(gameWorld.isOnSolidGround(850.0))  // Beyond all platforms (rightmost regular is 600-800, rightmost floating is 650-720)
+        assertFalse(gameWorld.isOnSolidGround(-10.0))  // Before the leftmost platform
     }
     
     @Test

@@ -156,7 +156,7 @@ class GamePanel : JPanel(), ActionListener {
     }
     
     /**
-     * Draws the ground platform.
+     * Draws the ground and floating platforms.
      *
      * @param g2d The Graphics2D context to draw on
      */
@@ -166,7 +166,15 @@ class GamePanel : JPanel(), ActionListener {
         // Draw each platform as a separate rectangle
         gameWorld.platforms.forEach { platform ->
             val platformWidth = platform.endX - platform.startX
-            val platformHeight = height - platform.y
+
+            // Determine if this is a floating platform or ground-level platform
+            val isFloatingPlatform = platform.y < gameWorld.groundLevel
+            val platformHeight = if (isFloatingPlatform) {
+                20 // Fixed thickness for floating platforms
+            } else {
+                height - platform.y // Extend to bottom for ground platforms
+            }
+
             g2d.fillRect(
                 platform.startX,
                 platform.y,

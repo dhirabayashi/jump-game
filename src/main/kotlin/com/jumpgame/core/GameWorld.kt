@@ -41,7 +41,7 @@ class GameWorld {
     val platforms: List<Platform> = generateGamePlatforms()
 
     /**
-     * Generates all platforms for the game world including regular platforms and staircases.
+     * Generates all platforms for the game world including regular platforms, staircases, and floating platforms.
      *
      * @return List of all Platform objects in the game world
      */
@@ -74,7 +74,44 @@ class GameWorld {
         )
         platformList.addAll(descendingStaircase.generatePlatforms(groundLevel - 100))
 
+        // Add floating platforms that are reachable by jumping
+        platformList.addAll(generateFloatingPlatforms())
+
         return platformList
+    }
+
+    /**
+     * Generates floating platforms at various heights that are reachable by jumping.
+     * These platforms are positioned in mid-air to provide challenge and vertical gameplay.
+     *
+     * @return List of floating Platform objects
+     */
+    private fun generateFloatingPlatforms(): List<Platform> {
+        val floatingPlatforms = mutableListOf<Platform>()
+
+        // High floating platform above the left side
+        floatingPlatforms.add(Platform(80, 180, groundLevel - 120))
+
+        // Medium height floating platform in the center-left area
+        floatingPlatforms.add(Platform(180, 280, groundLevel - 80))
+
+        // High floating platform in the center
+        floatingPlatforms.add(Platform(320, 420, groundLevel - 140))
+
+        // Small stepping stone platform
+        floatingPlatforms.add(Platform(440, 500, groundLevel - 90))
+
+        // High floating platform on the right side
+        floatingPlatforms.add(Platform(520, 620, groundLevel - 110))
+
+        // Very high challenge platform (requires precise jumping)
+        floatingPlatforms.add(Platform(350, 400, groundLevel - 180))
+
+        // Lower floating platforms for easier navigation
+        floatingPlatforms.add(Platform(120, 200, groundLevel - 60))
+        floatingPlatforms.add(Platform(650, 720, groundLevel - 70))
+
+        return floatingPlatforms
     }
 
     /**
