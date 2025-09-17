@@ -439,8 +439,8 @@ class GameWorldTest {
     fun `game world has platforms defined`() {
         val gameWorld = createGameWorld()
 
-        // New layout includes 2 regular platforms + 5 ascending stairs + 4 descending stairs + 8 floating platforms = 19 platforms
-        assertEquals(19, gameWorld.platforms.size)
+        // New layout includes 2 regular platforms + 5 ascending stairs + 4 descending stairs + 5 floating platforms = 16 platforms
+        assertEquals(16, gameWorld.platforms.size)
 
         // Check first regular platform
         assertEquals(0, gameWorld.platforms[0].startX)

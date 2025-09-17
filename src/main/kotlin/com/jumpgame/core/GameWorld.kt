@@ -92,9 +92,6 @@ class GameWorld {
         // High floating platform above the left side
         floatingPlatforms.add(Platform(80, 180, groundLevel - 120))
 
-        // Medium height floating platform in the center-left area
-        floatingPlatforms.add(Platform(180, 280, groundLevel - 80))
-
         // High floating platform in the center
         floatingPlatforms.add(Platform(320, 420, groundLevel - 140))
 
@@ -104,11 +101,7 @@ class GameWorld {
         // High floating platform on the right side
         floatingPlatforms.add(Platform(520, 620, groundLevel - 110))
 
-        // Very high challenge platform (requires precise jumping)
-        floatingPlatforms.add(Platform(350, 400, groundLevel - 180))
-
-        // Lower floating platforms for easier navigation
-        floatingPlatforms.add(Platform(120, 200, groundLevel - 60))
+        // Lower floating platform for easier navigation
         floatingPlatforms.add(Platform(650, 720, groundLevel - 70))
 
         return floatingPlatforms
