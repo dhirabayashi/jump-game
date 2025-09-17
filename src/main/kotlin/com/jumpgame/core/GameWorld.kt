@@ -403,8 +403,6 @@ class GameWorld {
         val playerHeight = player.height.toDouble()
         val playerBottomY = playerY + playerHeight
 
-        var onGround = false
-
         for (platform in platforms) {
             val platformLeft = platform.startX.toDouble()
             val platformRight = platform.endX.toDouble()
@@ -420,7 +418,6 @@ class GameWorld {
                     player.velocity = Vector2D(player.velocity.x, 0.0)
                     player.isOnGround = true
                     player.isJumping = false
-                    onGround = true
                     return
                 }
 
@@ -433,9 +430,7 @@ class GameWorld {
             }
         }
 
-        if (!onGround) {
-            player.isOnGround = false
-        }
+        player.isOnGround = false
     }
 
 }
@@ -469,28 +464,6 @@ data class Platform(val startX: Int, val endX: Int, val y: Int = 400, val thickn
      * Gets the bottom Y coordinate of the platform.
      */
     val bottom: Int get() = y + thickness
-
-    /**
-     * Checks if this platform intersects with a rectangular area.
-     */
-    fun intersects(x: Double, y: Double, width: Double, height: Double): Boolean {
-        return x < endX && x + width > startX && y < bottom && y + height > this.y
-    }
-
-    /**
-     * Gets the rectangular bounds of this platform.
-     */
-    fun getBounds(): Rectangle {
-        return Rectangle(startX, y, endX - startX, thickness)
-    }
-}
-
-/**
- * Represents a rectangular area for collision detection.
- */
-data class Rectangle(val x: Int, val y: Int, val width: Int, val height: Int) {
-    val right: Int get() = x + width
-    val bottom: Int get() = y + height
 }
 
 /**
