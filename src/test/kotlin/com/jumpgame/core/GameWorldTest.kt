@@ -541,4 +541,120 @@ class GameWorldTest {
         assertTrue(player.velocity.x > 0)
         assertTrue(player.velocity.y < 0) // Moving up from jump
     }
+
+    @Test
+    fun `game world initializes with coins`() {
+        val gameWorld = createGameWorld()
+        val coins = gameWorld.getCoins()
+
+        assertTrue(coins.size > 0)
+        assertTrue(coins.all { !it.isCollected })
+    }
+
+    @Test
+    fun `game world initializes with zero score`() {
+        val gameWorld = createGameWorld()
+
+        assertEquals(0, gameWorld.score)
+    }
+
+    @Test
+    fun `player can collect coins`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.player
+        val coins = gameWorld.getCoins()
+
+        // Position player near a coin
+        val targetCoin = coins.first()
+        player.position = Vector2D(targetCoin.position.x, targetCoin.position.y)
+
+        gameWorld.update()
+
+        // Coin should be collected and score should increase
+        assertTrue(targetCoin.isCollected)
+        assertEquals(targetCoin.value, gameWorld.score)
+    }
+
+    @Test
+    fun `collecting multiple coins increases score`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.player
+        val coins = gameWorld.getCoins()
+
+        var expectedScore = 0
+
+        // Collect first two coins
+        for (i in 0..1) {
+            val coin = coins[i]
+            player.position = Vector2D(coin.position.x, coin.position.y)
+            gameWorld.update()
+
+            assertTrue(coin.isCollected)
+            expectedScore += coin.value
+            assertEquals(expectedScore, gameWorld.score)
+        }
+    }
+
+    @Test
+    fun `collected coins do not affect score again`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.player
+        val coins = gameWorld.getCoins()
+
+        // Position player near a coin and collect it
+        val targetCoin = coins.first()
+        player.position = Vector2D(targetCoin.position.x, targetCoin.position.y)
+        gameWorld.update()
+
+        val scoreAfterFirstCollection = gameWorld.score
+        assertTrue(targetCoin.isCollected)
+
+        // Stay in same position for another update
+        gameWorld.update()
+
+        // Score should not change
+        assertEquals(scoreAfterFirstCollection, gameWorld.score)
+    }
+
+    @Test
+    fun `reset restores coins and resets score`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.player
+        val coins = gameWorld.getCoins()
+
+        // Collect a coin
+        val targetCoin = coins.first()
+        player.position = Vector2D(targetCoin.position.x, targetCoin.position.y)
+        gameWorld.update()
+
+        assertTrue(targetCoin.isCollected)
+        assertTrue(gameWorld.score > 0)
+
+        gameWorld.reset()
+
+        // All coins should be reset and score should be zero
+        val resetCoins = gameWorld.getCoins()
+        assertTrue(resetCoins.all { !it.isCollected })
+        assertEquals(0, gameWorld.score)
+    }
+
+    @Test
+    fun `dead player cannot collect coins`() {
+        val gameWorld = createGameWorld()
+        val player = gameWorld.player
+        val coins = gameWorld.getCoins()
+
+        // Kill player
+        player.die()
+
+        // Position near a coin
+        val targetCoin = coins.first()
+        player.position = Vector2D(targetCoin.position.x, targetCoin.position.y)
+
+        gameWorld.update()
+
+        // Coin should not be collected
+        assertFalse(targetCoin.isCollected)
+        assertEquals(0, gameWorld.score)
+    }
 }

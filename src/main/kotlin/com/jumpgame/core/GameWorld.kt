@@ -16,6 +16,9 @@ class GameWorld {
     
     /** List of enemies in the game world */
     private val enemies = mutableListOf<Enemy>()
+
+    /** List of coins in the game world */
+    private val coins = mutableListOf<Coin>()
     
     /** Flag indicating whether the game is over */
     var isGameOver: Boolean = false
@@ -23,6 +26,10 @@ class GameWorld {
     
     /** Number of remaining lives for the player */
     var remainingLives: Int = 5
+        private set
+
+    /** Player's current score from collected coins */
+    var score: Int = 0
         private set
     
     /** Timestamp of the last update for delta time calculation */
@@ -140,6 +147,7 @@ class GameWorld {
         lastUpdateTime = System.nanoTime()
 
         spawnInitialEnemies()
+        spawnCoins()
     }
 
 
@@ -161,6 +169,7 @@ class GameWorld {
         keepPlayerInBounds()
         checkPlatformCollisions()
         checkCollisions()
+        checkCoinCollisions()
         checkPitFalls()
 
         // Handle player death
@@ -231,8 +240,11 @@ class GameWorld {
         player.reset(resetPos)
         enemies.clear()
         spawnInitialEnemies()
+        coins.clear()
+        spawnCoins()
         isGameOver = false
         remainingLives = 5
+        score = 0
         lastUpdateTime = System.nanoTime()
     }
 
@@ -242,6 +254,13 @@ class GameWorld {
      * @return List of Enemy objects currently in the game world
      */
     fun getEnemies(): List<Enemy> = enemies.toList()
+
+    /**
+     * Returns the list of coins for external access (e.g., rendering).
+     *
+     * @return List of Coin objects currently in the game world
+     */
+    fun getCoins(): List<Coin> = coins.toList()
     
     /**
      * Spawns the initial set of enemies in the game world.
@@ -431,6 +450,50 @@ class GameWorld {
         }
 
         player.isOnGround = false
+    }
+
+    /**
+     * Spawns coins throughout the game world on platforms and floating platforms.
+     * Places coins at strategic positions to encourage exploration.
+     */
+    private fun spawnCoins() {
+        coins.clear()
+
+        // Place coins on regular platforms
+        coins.add(Coin(Vector2D(100.0, groundLevel - 20.0))) // Left platform
+        coins.add(Coin(Vector2D(150.0, groundLevel - 20.0))) // Left platform
+        coins.add(Coin(Vector2D(650.0, groundLevel - 20.0))) // Right platform
+        coins.add(Coin(Vector2D(750.0, groundLevel - 20.0))) // Right platform
+
+        // Place coins on floating platforms
+        coins.add(Coin(Vector2D(130.0, groundLevel - 140.0))) // High left floating platform
+        coins.add(Coin(Vector2D(370.0, groundLevel - 160.0))) // Center high floating platform
+        coins.add(Coin(Vector2D(470.0, groundLevel - 110.0))) // Stepping stone platform
+        coins.add(Coin(Vector2D(570.0, groundLevel - 130.0))) // Right high floating platform
+        coins.add(Coin(Vector2D(685.0, groundLevel - 90.0)))  // Right low floating platform
+
+        // Place coins on staircase
+        coins.add(Coin(Vector2D(280.0, groundLevel - 45.0)))  // On ascending staircase
+        coins.add(Coin(Vector2D(340.0, groundLevel - 95.0)))  // On ascending staircase
+        coins.add(Coin(Vector2D(520.0, groundLevel - 95.0)))  // On descending staircase
+    }
+
+    /**
+     * Checks for collisions between the player and coins.
+     * When a coin is collected, it's marked as collected and the player's score increases.
+     */
+    private fun checkCoinCollisions() {
+        if (!player.isAlive) return
+
+        val playerBounds = player.getBounds()
+        val playerRect = java.awt.Rectangle(playerBounds.x, playerBounds.y, playerBounds.width, playerBounds.height)
+
+        coins.forEach { coin ->
+            if (!coin.isCollected && coin.collidesWith(playerRect)) {
+                coin.collect()
+                score += coin.value
+            }
+        }
     }
 
 }

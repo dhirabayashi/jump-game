@@ -47,6 +47,9 @@ class GamePanel : JPanel(), ActionListener {
         
         /** Color used for game over text */
         private val GAME_OVER_COLOR = Color.RED
+
+        /** Color used to render coins */
+        private val COIN_COLOR = Color.YELLOW
     }
     
     /**
@@ -136,6 +139,7 @@ class GamePanel : JPanel(), ActionListener {
         
         drawBackground(g2d)
         drawGround(g2d)
+        drawCoins(g2d)
         drawPlayer(g2d)
         drawEnemies(g2d)
         drawUI(g2d)
@@ -227,12 +231,16 @@ class GamePanel : JPanel(), ActionListener {
         g2d.drawString("Jumping: ${player.isJumping}", 10, 70)
         g2d.drawString("Alive: ${player.isAlive}", 10, 90)
         g2d.drawString("Lives: ${gameWorld.remainingLives}", 10, 110)
-        g2d.drawString("Enemies: ${gameWorld.getEnemies().size}", 10, 130)
+        g2d.drawString("Score: ${gameWorld.score}", 10, 130)
+        g2d.drawString("Enemies: ${gameWorld.getEnemies().size}", 10, 150)
         
-        // Draw lives in a prominent position
+        // Draw lives and score in prominent positions
         g2d.color = Color.RED
         g2d.font = Font("Arial", Font.BOLD, 20)
         g2d.drawString("Lives: ${gameWorld.remainingLives}", width - 120, 30)
+
+        g2d.color = Color.ORANGE
+        g2d.drawString("Score: ${gameWorld.score}", width - 120, 60)
         
         g2d.color = TEXT_COLOR
         g2d.font = Font("Arial", Font.PLAIN, 12)
@@ -260,6 +268,33 @@ class GamePanel : JPanel(), ActionListener {
      */
     fun isRunning(): Boolean = isGameRunning
     
+    /**
+     * Draws all coins in the game world.
+     *
+     * @param g2d The Graphics2D context to draw on
+     */
+    private fun drawCoins(g2d: Graphics2D) {
+        val coins = gameWorld.getCoins()
+
+        coins.forEach { coin ->
+            if (!coin.isCollected) {
+                val bounds = coin.getBounds()
+
+                // Draw coin as a circle with golden appearance
+                g2d.color = COIN_COLOR
+                g2d.fillOval(bounds.x, bounds.y, bounds.width, bounds.height)
+
+                // Add a border for better visibility
+                g2d.color = Color.ORANGE
+                g2d.drawOval(bounds.x, bounds.y, bounds.width, bounds.height)
+
+                // Add a small inner highlight
+                g2d.color = Color.WHITE
+                g2d.fillOval(bounds.x + 3, bounds.y + 3, 4, 4)
+            }
+        }
+    }
+
     /**
      * Draws all enemies in the game world.
      *
